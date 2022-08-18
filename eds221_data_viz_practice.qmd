@@ -1,0 +1,103 @@
+---
+title: "Data Visualization Practice"
+author: "Lew"
+format: html
+editor: visual
+---
+
+## 
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+```
+
+```{r}
+space_launches <- read_csv(here("data", "space_launches.csv"))
+```
+
+```{r}
+space_launches_grouped <- space_launches |> 
+  group_by(launch_year) |> 
+  summarise(count = n())
+
+space_launch_count <- space_launches |> 
+  group_by(launch_year) %>%
+  mutate(count_launches = n())
+
+ggplot(data = space_launches_grouped, aes(x = launch_year, y = count)) +
+  geom_path(aes(color = count), size = 29) + 
+  coord_polar() +
+  theme(panel.background = element_rect(fill = "green", color = "orange"),
+        panel.grid.major = element_line(color = "red", size = 4),
+        text = element_text(size = 12),
+        axis.title = element_text(color = "Purple"),
+        axis.text = element_text(color = "orange"),
+        title = element_text(family = "Comic Sans MS")) +
+  labs(x = "LAUNCH YEAR", y = "NUMBER OF LAUNCHES", title = "As evident from this chart, launches spiraled out of control from 1967 to 2017") +
+  annotate("text",
+           x = 0.1,
+           y = 0.2,
+           label = "lubridate",
+           color = "blue", 
+           size = 23)
+  
+```
+
+```{r}
+ggsave(here("docs", "uggo_plot.png"))
+```
+
+1.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by sector_general
+
+2.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by year and commodity type
+
+3.  Create a subset of the data that only contains observations from 2005 on, only for observations where `Sector_Detail2` contains the pattern \"PG&E\", then limit to columns `Calendar_Year`, `Sector_Detail2` and `Emissions_mtCO2e`.
+
+```{r}
+emissions <- read_csv(here("data", "San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv"))
+
+#1
+emissions %>%
+  group_by(Sector_General) %>%
+  summarise(total_emmisions = sum(Emissions_mtCO2e, na.rm = TRUE))
+
+#2
+emissions |> 
+  group_by(Calendar_Year, Commodity_Type) |> 
+  summarise(total_emissions = sum(Emissions_mtCO2e, na.rm = TRUE))
+  
+#3
+emissions |> 
+  filter(Calendar_Year >= 2005,
+         str_detect(string = Sector_Detail2, pattern = "PG&E")) |> 
+  select(Calendar_Year, Sector_Detail2, Emissions_mtCO2e)
+  
+```
+
+Create a finalized graph (as perfect as you can make it) using the San Francisco GHG emissions dataset. **You** get to choose what you want to visualize. You can pick which variables & observations you\'re interested in. You may want to do some wrangling / summarizing first.
+
+Once you\'ve decided on what to plot, create the best graph that you can to communicate what\'s going on with the data.
+
+**Once you\'re done, drop your best graph (as a .png or .jpg) into the course Slack channel.**
+
+```{r}
+test <- emissions |> 
+  group_by(Calendar_Year, Sector_General) |> 
+  summarise(total_co2 = sum(Emissions_mtCO2e))
+```
+
+```{r}
+ggplot(data = test, aes(x = Calendar_Year, y = total_co2)) + 
+  geom_line(aes(color = Sector_General)) +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  labs(x = "Year",
+       y = "Total CO2 emmisions (in megatons)",
+       title = "Buildings and Transportation Have Accounted for the Majority of CO2 emissions in San Francisco since 1990",
+       col = "General Sector")
+  
+ggsave(here("data", "emissions_graph.png"))
+```
